@@ -1,74 +1,49 @@
-#changes need to be done here like to use pathway for the vector database
-
-
-# from langchain.document_loaders import DirectoryLoader
-from langchain_community.document_loaders import DirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
-# from langchain.embeddings import OpenAIEmbeddings
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
-import openai 
-from dotenv import load_dotenv
+import pathway as pw
 import os
-import shutil
+from dotenv import load_dotenv
 
-# Load environment variables. Assumes that project contains .env file with API keys
+# Load your API keys (OpenAI / Gemini)
 load_dotenv()
-#---- Set OpenAI API key 
-# Change environment variable name from "OPENAI_API_KEY" to the name given in 
-# your .env file.
-openai.api_key = os.environ['OPENAI_API_KEY']
-
-CHROMA_PATH = "chroma"
-DATA_PATH = "data/books"
-
 
 def main():
-    generate_data_store()
-
-
-def generate_data_store():
-    documents = load_documents()
-    chunks = split_text(documents)
-    save_to_chroma(chunks)
-
-
-def load_documents():
-    loader = DirectoryLoader(DATA_PATH, glob="*.md")
-    documents = loader.load()
-    return documents
-
-
-def split_text(documents: list[Document]):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300,
-        chunk_overlap=100,
-        length_function=len,
-        add_start_index=True,
+    # --- 1. THE LIBRARIAN (Data Input) ---
+    # Monitors the 'books' folder for any .txt files
+    # Note: Make sure your books are inside a folder named 'books'
+    data_sources = pw.io.fs.read(
+        "./books",  
+        format="binary",
+        mode="static",
+        with_metadata=True,
     )
-    chunks = text_splitter.split_documents(documents)
-    print(f"Split {len(documents)} documents into {len(chunks)} chunks.")
 
-    document = chunks[10]
-    print(document.page_content)
-    print(document.metadata)
-
-    return chunks
-
-
-def save_to_chroma(chunks: list[Document]):
-    # Clear out the database first.
-    if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH)
-
-    # Create a new DB from the documents.
-    db = Chroma.from_documents(
-        chunks, OpenAIEmbeddings(), persist_directory=CHROMA_PATH
+    # --- 2. THE BRAIN (Embeddings) ---
+    # We use OpenAI Embeddings to match your query_data.py
+    # Ensure OPENAI_API_KEY is in your .env file
+    embedder_model = pw.xpacks.llm.embedders.OpenAIEmbedder(
+        model="text-embedding-3-small",
+        cache_strategy=pw.xpacks.llm.embedders.CacheStrategy.DISK, # Caches results so it's faster next time
     )
-    db.persist()
-    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
+    # --- 3. THE SERVER (Vector Store) ---
+    # This replaces "Chroma.from_documents"
+    vector_server = pw.xpacks.llm.vector_store.VectorStoreServer(
+        data_sources,
+        embedder=embedder_model,
+        parser=pw.xpacks.llm.parsers.OpenParse(),
+    )
+
+    # --- 4. RUN IT ---
+    print("🚀 Pathway Server is starting...")
+    print("Host: 127.0.0.1 | Port: 8765")
+    print("Keep this script RUNNING. Do not close it!")
+    
+    # This runs the server forever until you stop it (Ctrl+C)
+    vector_server.run_server(
+        host="127.0.0.1",
+        port=8765,
+        threaded=False, # We want this to be the main process
+        with_cache=True
+    )
 
 if __name__ == "__main__":
     main()
