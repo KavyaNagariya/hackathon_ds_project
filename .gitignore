@@ -1,4 +1,14 @@
+# --- Secrets (NEVER upload these) ---
 .env
-chroma_*
-chroma
+
+# --- System Files ---
 .DS_Store
+
+# --- Python Cache ---
+__pycache__/
+*.pyc
+
+# --- Pathway & Data ---
+# We ignore the cache so we don't upload the database to GitHub
+.pathway_cache/
+pathway_storage/

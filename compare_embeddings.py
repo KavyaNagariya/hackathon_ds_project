@@ -1,32 +1,32 @@
-#changes needed to be done here like we need to use pathway for the vector embeddings here 
-
-
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain.evaluation import load_evaluator
 from dotenv import load_dotenv
-import openai
 import os
 
-# Load environment variables. Assumes that project contains .env file with API keys
+# Load API keys
 load_dotenv()
-#---- Set OpenAI API key 
-# Change environment variable name from "OPENAI_API_KEY" to the name given in 
-# your .env file.
-openai.api_key = os.environ['OPENAI_API_KEY']
 
 def main():
-    # Get embedding for a word.
-    embedding_function = OpenAIEmbeddings()
+    # --- CHANGE: Use Google Gemini instead of OpenAI ---
+    # Make sure GOOGLE_API_KEY is in your .env file
+    embedding_function = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+    # 1. Get embedding for a word
     vector = embedding_function.embed_query("apple")
-    print(f"Vector for 'apple': {vector}")
-    print(f"Vector length: {len(vector)}")
+    print(f"Vector for 'apple': {vector[:5]}... (Length: {len(vector)})")
 
-    # Compare vector of two words
-    evaluator = load_evaluator("pairwise_embedding_distance")
-    words = ("apple", "iphone")
-    x = evaluator.evaluate_string_pairs(prediction=words[0], prediction_b=words[1])
-    print(f"Comparing ({words[0]}, {words[1]}): {x}")
+    # 2. Compare two words (Calculates distance)
+    # Note: We manually calculate distance because the evaluator might default to OpenAI
+    vector_a = embedding_function.embed_query("apple")
+    vector_b = embedding_function.embed_query("iphone")
+    
+    # Simple Cosine Similarity check manually to avoid extra dependencies
+    import numpy as np
+    def cosine_similarity(a, b):
+        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
+    score = cosine_similarity(vector_a, vector_b)
+    print(f"Similarity between 'apple' and 'iphone': {score}")
 
 if __name__ == "__main__":
     main()

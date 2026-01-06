@@ -2,81 +2,66 @@ import pandas as pd
 import requests
 import time
 
-# --- CONFIGURATION ---
-# The URL where your create_database.py server is listening
+# The URL of your running Pathway server
 SERVER_URL = "http://127.0.0.1:8765/v1/retrieve"
 
-def check_consistency(backstory, book_name):
-    """
-    Sends the backstory to the Pathway Server and asks the LLM to judge it.
-    """
-    # 1. We construct the query
-    # We explicitly ask for a binary consistency check
+def check_consistency(backstory):
+    """Sends a single backstory to the server to be checked."""
     prompt = f"""
-    You are a consistency checker for the novel '{book_name}'.
+    TASK: Determine if the following backstory is consistent with the novel.
     
-    BACKSTORY TO CHECK:
-    "{backstory}"
+    BACKSTORY: "{backstory}"
     
-    TASK:
-    1. Search the novel for evidence related to this backstory.
-    2. Determine if the backstory is CONSISTENT (Possible) or INCONSISTENT (Contradicts the book).
-    3. Output ONLY the word 'Consistent' or 'Inconsistent', followed by a short explanation.
+    INSTRUCTIONS:
+    1. Search the novel for evidence.
+    2. If the backstory contradicts the novel, output 'Inconsistent'.
+    3. If it fits or there is no contradicting evidence, output 'Consistent'.
+    4. Provide a 1-sentence reason after the final answer.
+    
+    OUTPUT FORMAT: [Consistent/Inconsistent]. [Reasoning].
     """
     
     try:
-        # Send to Pathway (This assumes you are running the server!)
-        # Note: We use a simple HTTP request to the Pathway server
-        response = requests.post(
-            SERVER_URL,
-            json={"query": prompt, "k": 5} # k=5 means "get 5 pieces of evidence"
-        )
-        
+        response = requests.post(SERVER_URL, json={"query": prompt, "k": 5})
         if response.status_code == 200:
-            result_text = response.json()['response']
-            
-            # Simple parsing logic (You can improve this!)
-            if "Inconsistent" in result_text:
-                return 0, result_text
-            else:
-                return 1, result_text
+            result = response.json()['response']
+            # Simple logic to get the 1/0 prediction
+            prediction = 0 if "Inconsistent" in result else 1
+            return prediction, result
         else:
-            print(f"Server Error: {response.status_code}")
-            return 0, "Error connecting to server"
+            return 0, f"Error: Status {response.status_code}"
             
     except Exception as e:
-        print(f"Connection Failed: {e}")
-        return 0, "Server not running?"
+        return 0, f"Connection Error: {e}"
 
 def main():
-    print("--- 🚀 STARTING SUBMISSION GENERATOR ---")
+    print("--- Starting Submission Generation ---")
     
-    # 1. Load the Test Data
-    # Note: Based on your files, the column is named 'content', not 'backstory'
-    df = pd.read_csv("test.csv")
-    print(f"Loaded {len(df)} stories to check.")
-    
+    # 1. Read the test file
+    try:
+        df = pd.read_csv("test.csv")
+        print(f"Loaded {len(df)} rows from test.csv.")
+    except FileNotFoundError:
+        print("Error: 'test.csv' not found. Please put it in this folder.")
+        return
+
     predictions = []
     rationales = []
-    
+
     # 2. Loop through every row
+    print("Processing backstories. This may take a while...")
     for index, row in df.iterrows():
-        story_id = row['id']
-        backstory_text = row['content'] # The column name in your CSV
-        book = row['book_name']
-        
-        print(f"Processing ID {story_id} ({book})...")
-        
-        # Ask the AI
-        pred, reason = check_consistency(backstory_text, book)
-        
+        # Show progress every 10 rows
+        if index % 10 == 0:
+            print(f"Processing row {index}/{len(df)}...")
+            
+        pred, reason = check_consistency(row['content'])
         predictions.append(pred)
         rationales.append(reason)
-        
-        # Sleep briefly to be nice to the API
-        time.sleep(0.5)
+        # Wait a bit to be nice to the server
+        time.sleep(0.2)
 
-    # 3. Save the Results
+    # 3. Save the final results
     submission_df = pd.DataFrame({
         "id": df['id'],
         "prediction": predictions,
@@ -84,7 +69,7 @@ def main():
     })
     
     submission_df.to_csv("results.csv", index=False)
-    print("\n✅ DONE! Results saved to 'results.csv'. Good luck!")
+    print("\n✅ Done! 'results.csv' has been created successfully.")
 
 if __name__ == "__main__":
     main()
