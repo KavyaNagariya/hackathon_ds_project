@@ -1,17 +1,4 @@
-# --- Core Engine ---
-pathway[xpack-llm]
-
-# --- Fix for the Crash ---
-cohere==5.1.8 
-
-# --- AI Models ---
-langchain
-langchain-google-genai
-langchain-community
-
-# --- Utilities ---
-python-dotenv==1.0.1
+pathway[llm]
+openai
+python-dotenv
 tiktoken
-pandas
-requests
-numpy
