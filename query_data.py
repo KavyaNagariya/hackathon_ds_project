@@ -1,5 +1,4 @@
 import requests
-import json
 
 # The URL of your running Pathway server
 SERVER_URL = "http://127.0.0.1:8765/v1/retrieve"

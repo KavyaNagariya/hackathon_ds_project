@@ -1,7 +1,5 @@
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain.evaluation import load_evaluator
 from dotenv import load_dotenv
-import os
 
 # Load API keys
 load_dotenv()
