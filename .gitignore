@@ -12,3 +12,5 @@ __pycache__/
 # We ignore the cache so we don't upload the database to GitHub
 .pathway_cache/
 pathway_storage/
+
+.venv

@@ -1,12 +1,17 @@
-# --- Core Engine (Mandatory for Track A) ---
+# --- Core Engine ---
 pathway[xpack-llm]
 
+# --- Fix for the Crash ---
+cohere==5.1.8 
+
 # --- AI Models ---
-langchain-google-genai  # For Gemini
+langchain
+langchain-google-genai
 langchain-community
 
 # --- Utilities ---
 python-dotenv==1.0.1
 tiktoken
-pandas  # For reading CSV files
-requests # For talking to the server
+pandas
+requests
+numpy

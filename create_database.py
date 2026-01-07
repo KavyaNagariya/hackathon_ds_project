@@ -36,7 +36,7 @@ def main():
     
     # Runs forever until you press Ctrl+C
     vector_server.run_server(
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=8765,
         threaded=False,
         with_cache=True
