@@ -1,4 +1,5 @@
 pathway[llm]
-openai
+google-generativeai
 python-dotenv
 tiktoken
+litellm  # Crucial: Pathway uses this to talk to non-OpenAI models

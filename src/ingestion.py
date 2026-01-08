@@ -1,19 +1,34 @@
 import pathway as pw
 
+# 1. Define the Schema for the Backstory CSV
+# This ensures strict typing and avoids the CsvSettings error.
+class QuerySchema(pw.Schema):
+    id: str
+    book_name: str
+    char: str
+    caption: str  # Some rows have it, some don't (nullable handled as str)
+    content: str
+
 def load_novels(data_dir: str):
     """
-    Reads files from data_dir but filters to keep ONLY .txt files.
+    Reads novels as a Pathway Table.
     """
-    # 1. Read everything in the folder
+    # Read .txt files. Column 'data' contains the text.
     files = pw.io.fs.read(
-        path=data_dir,
-        format="text",
+        path=data_dir + "*.txt",
+        format="plaintext",
         mode="static",
         with_metadata=True
     )
-    
-    # 2. Filter: Keep only files ending in .txt
-    # This prevents the system from reading the CSV or other junk as a novel.
-    novels = files.filter(pw.this.path.endswith(".txt"))
-    
-    return novels
+    return files
+
+def load_queries_pathway(csv_path: str):
+    """
+    Reads the Backstory CSV using the strict schema.
+    """
+    # FIX: Removed CsvSettings. Used 'schema' instead.
+    return pw.io.csv.read(
+        csv_path,
+        mode="static",
+        schema=QuerySchema
+    )
