@@ -11,7 +11,6 @@ import google.generativeai as genai
 load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 
-# Suppress the "FutureWarning"
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -20,39 +19,35 @@ if not GEMINI_KEY:
 else:
     genai.configure(api_key=GEMINI_KEY)
 
-# --- HELPER FUNCTIONS ---
-def get_embedding_safe(text, retries=3):
-    """Robust embedding with retries."""
+# --- OPTIMIZED BATCH EMBEDDING ---
+def get_batch_embeddings(texts, retries=3):
+    """
+    Embeds a list of texts in one API call (Much faster).
+    """
     for i in range(retries):
         try:
-            # Using the specialized embedding model
             result = genai.embed_content(
                 model="models/text-embedding-004",
-                content=text,
+                content=texts,
                 task_type="retrieval_document"
             )
+            # The API returns a dictionary, usually 'embedding' which is a list of lists
             return result['embedding']
         except Exception as e:
-            time.sleep(1)
-    # Return zero vector if all retries fail to prevent crash
-    return [0.0] * 768
+            # If batch fails (e.g. too large), wait and retry
+            print(f"   ⚠️ Batch API Hiccup: {e}. Retrying...")
+            time.sleep(2)
+    # Fallback: Return zeros if complete fail
+    return [[0.0] * 768 for _ in texts]
 
 def verify_safe(backstory, evidence):
-    """Gemini reasoning with error handling."""
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = f"""
         Determine if the Backstory contradicts the Novel Evidence.
-        
-        EVIDENCE:
-        {evidence}
-        
-        BACKSTORY:
-        {backstory}
-        
-        OUTPUT FORMAT:
-        Prediction: [1 for Consistent, 0 for Contradiction]
-        Rationale: [1 sentence reason]
+        EVIDENCE: {evidence}
+        BACKSTORY: {backstory}
+        OUTPUT: Prediction: [1=Consistent, 0=Contradiction]. Rationale: [1 sentence].
         """
         res = model.generate_content(prompt)
         return res.text
@@ -61,141 +56,93 @@ def verify_safe(backstory, evidence):
 
 # --- MAIN PIPELINE ---
 def run_hackathon_pipeline():
-    print("🚀 Starting Time-Bounded Pipeline...")
+    print("🚀 Starting TURBO PIPELINE...")
     
-    # 1. VERIFY DATA EXISTS
-    if not os.path.exists("data/"):
-        print("❌ Error: 'data/' folder not found.")
+    # 1. VERIFY DATA
+    if not os.path.exists("data/") or not any(f.endswith(".txt") for f in os.listdir("data/")):
+        print("❌ Error: No .txt files in data/ folder.")
         return
-    
-    txt_files = [f for f in os.listdir("data/") if f.endswith(".txt")]
-    if not txt_files:
-        print("❌ Error: No .txt files found in data/. Please upload the novels.")
-        return
-    print(f"   Found novels: {txt_files}")
 
-    # 2. PATHWAY INGESTION (The Trick: Dump to CSV)
-    print("📚 Ingesting novels via Pathway...")
+    # 2. PATHWAY INGESTION
+    print("📚 Reading Novels via Pathway...")
+    files_table = pw.io.fs.read("data/", format="plaintext", mode="static", with_metadata=True)
     
-    # Define the graph
-    # We read from the directory. mode="static" means read once.
-    files_table = pw.io.fs.read(
-        "data/", 
-        format="plaintext", 
-        mode="static", 
-        with_metadata=True
-    )
-    
-    # We write to a temp file immediately
     temp_csv = "data/temp_novels_dump.csv"
-    if os.path.exists(temp_csv):
-        os.remove(temp_csv) # Clean up previous run
-        
+    if os.path.exists(temp_csv): os.remove(temp_csv)
+    
     pw.io.csv.write(files_table, temp_csv)
     
-    # Run Pathway in a Daemon Thread
     def start_engine():
-        try:
-            pw.run()
-        except:
-            pass
-            
+        try: pw.run()
+        except: pass
     t = threading.Thread(target=start_engine, daemon=True)
     t.start()
     
-    # 3. THE COUNTDOWN (Force proceed after 15s)
-    print("⏳ Waiting 15 seconds for Pathway to process files...")
-    for i in range(15, 0, -1):
+    # 3. SMART WAIT
+    print("⏳ Processing files...", end="")
+    for i in range(20):
         if os.path.exists(temp_csv) and os.path.getsize(temp_csv) > 100:
-            # If file exists and has content, we might be done early, 
-            # but let's wait a bit to ensure full write.
-            pass 
-        print(f"   {i}...", end="\r")
+            print(" Done!")
+            break # Exit immediately when file is ready
         time.sleep(1)
-        
-    print("\n✅ Time's up. Reading extracted data...")
+        print(".", end="")
     
-    # 4. READ DUMPED DATA (Python Mode)
+    # 4. LOAD & CHUNK
     try:
-        if not os.path.exists(temp_csv):
-            print("❌ Pathway failed to create the CSV file. Check file permissions.")
-            return
-            
         df_novels = pd.read_csv(temp_csv)
-        print(f"   Successfully loaded {len(df_novels)} rows/files from Pathway output.")
-    except Exception as e:
-        print(f"❌ Error reading Pathway output: {e}")
+    except:
+        print("\n❌ Failed to read Pathway output.")
         return
 
-    # 5. CHUNK & EMBED (Python Loop - Visible Progress)
-    print("\n✂️ Chunking and Embedding...")
-    
     chunks = []
-    chunk_size = 500 # words
-    
-    # Iterate through the novels we loaded
+    chunk_size = 500
     for _, row in df_novels.iterrows():
-        text = str(row['data']) # 'data' column from Pathway
-        words = text.split()
+        words = str(row['data']).split()
         for i in range(0, len(words), chunk_size):
-            chunk_text = " ".join(words[i:i+chunk_size])
-            chunks.append(chunk_text)
+            chunks.append(" ".join(words[i:i+chunk_size]))
             
-    print(f"   Generated {len(chunks)} text chunks.")
-    
-    # Create Matrix
+    print(f"✂️  Generated {len(chunks)} chunks.")
+
+    # 5. BATCH EMBEDDING (The Speed Fix)
+    print("⚡ Computing Embeddings (Batch Mode)...")
     novel_vectors = []
-    print("   Computing Embeddings (this is the slow part)...")
-    for idx, chunk in enumerate(chunks):
-        if idx % 5 == 0:
-            print(f"   Encoded {idx}/{len(chunks)} chunks...", end="\r")
-        vec = get_embedding_safe(chunk)
-        novel_vectors.append(vec)
+    batch_size = 20 # Safe batch size for Gemini
+    
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i : i + batch_size]
+        print(f"   Batch {i // batch_size + 1}/{(len(chunks)//batch_size)+1}...", end="\r")
         
+        # Get 20 embeddings at once
+        batch_vecs = get_batch_embeddings(batch)
+        novel_vectors.extend(batch_vecs)
+        time.sleep(0.5) # Slight cool-down for rate limits
+
     novel_matrix = np.array(novel_vectors)
     print(f"\n✅ Index Ready. Matrix Shape: {novel_matrix.shape}")
 
     # 6. PROCESS QUERIES
-    print("\n❓ Processing Test Cases...")
+    print("\n❓ Processing Queries...")
     df_queries = pd.read_csv("data/test.csv")
     results = []
     
     for idx, row in df_queries.iterrows():
         try:
-            q_id = row['id']
-            char = row['char']
-            backstory = row['content']
-            
-            print(f"[{idx+1}/{len(df_queries)}] Checking {char} (ID: {q_id})...")
-            
-            # Vector Search
-            q_vec = np.array(get_embedding_safe(backstory))
+            q_vec = np.array(get_batch_embeddings([row['content']])[0])
             scores = np.dot(novel_matrix, q_vec)
-            top_5_idx = np.argsort(scores)[-5:][::-1]
+            top_5 = np.argsort(scores)[-5:][::-1]
+            evidence = "\n".join([chunks[i] for i in top_5])
             
-            evidence = "\n\n".join([chunks[i] for i in top_5_idx])
+            verdict = verify_safe(row['content'], evidence)
             
-            # Reasoning
-            verdict = verify_safe(backstory, evidence)
-            
-            # Logic parsing
             pred = 1 if "1" in verdict[:20] else 0
-            rationale = verdict.replace("\n", " ").strip()
-            if "Rationale:" in rationale:
-                rationale = rationale.split("Rationale:")[-1].strip()
-                
-            results.append({
-                "id": q_id,
-                "Prediction": pred,
-                "Rationale": rationale
-            })
+            rationale = verdict.replace("\n", " ").split("Rationale:")[-1].strip()
             
-            time.sleep(2) # Be nice to the API
+            print(f"[{idx+1}/{len(df_queries)}] {row['char']}: {pred}")
+            results.append({"id": row['id'], "Prediction": pred, "Rationale": rationale})
             
         except Exception as e:
-            print(f"⚠️ Skipped row {idx}: {e}")
+            print(f"⚠️ Error: {e}")
 
-    # 7. SAVE RESULTS
     pd.DataFrame(results).to_csv("results.csv", index=False)
     print("\n🎉 SUCCESS! 'results.csv' created.")
 
