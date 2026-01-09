@@ -12,7 +12,7 @@ load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_KEY:
-    print("❌ CRITICAL: GEMINI_API_KEY is missing in .env")
+    print("CRITICAL: GEMINI_API_KEY is missing in .env")
     exit()
 
 genai.configure(api_key=GEMINI_KEY)
@@ -28,7 +28,7 @@ def get_embeddings_batched(texts):
         )
         return result['embedding']
     except Exception as e:
-        print(f"   ⚠️ Batch Error: {e}. Retrying in 10s...")
+        print(f"Batch Error: {e}. Retrying in 10s...")
         time.sleep(10)
         try:
             result = genai.embed_content(
@@ -41,7 +41,7 @@ def get_embeddings_batched(texts):
             return [[0.0] * 768 for _ in texts]
 
 def build_knowledge_base():
-    print("🚀 STARTING DATABASE CREATION...")
+    print("STARTING DATABASE CREATION...")
     
     # 1. SETUP PATHS
     if not os.path.exists("data"): os.makedirs("data")
@@ -50,7 +50,7 @@ def build_knowledge_base():
     dump_file = "data/temp_dump.csv"
 
     # 2. READ NOVELS WITH PATHWAY
-    print("📚 Reading Novels via Pathway...")
+    print("Reading Novels via Pathway...")
     if os.path.exists(dump_file): os.remove(dump_file)
 
     # Pathway FS Read
@@ -65,7 +65,7 @@ def build_knowledge_base():
     t.start()
     
     # Wait for file
-    print("⏳ Extracting text...", end="")
+    print("Extracting text...", end="")
     for i in range(20):
         if os.path.exists(dump_file) and os.path.getsize(dump_file) > 1000:
             break
@@ -91,11 +91,11 @@ def build_knowledge_base():
         print(f"✅ Created {len(proper_chunks)} clean chunks.")
         
     except Exception as e:
-        print(f"❌ Error processing text: {e}")
+        print(f"Error processing text: {e}")
         return
 
     # 4. GENERATE EMBEDDINGS
-    print("⚡ Generating Embeddings (Batch Mode)...")
+    print("Generating Embeddings (Batch Mode)...")
     novel_vectors = []
     batch_size = 20
     
@@ -114,10 +114,9 @@ def build_knowledge_base():
     np.save(matrix_file, novel_matrix)
     pd.DataFrame({'chunk': proper_chunks}).to_csv(chunks_file, index=False)
     
-    print(f"\n🎉 SUCCESS! Database created.")
+    print(f"\n SUCCESS! Database created.")
     print(f"   - Embeddings: {matrix_file}")
     print(f"   - Text Chunks: {chunks_file}")
-    print("👉 Now run 'main.py' to get your results.")
 
 if __name__ == "__main__":
     build_knowledge_base()
