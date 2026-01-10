@@ -1,61 +1,61 @@
 id,Prediction,Rationale
-95,1,The evidence supports the claim that Noirtier engineered the Count’s murder.
-136,0,"The evidence does not explicitly state he was in Paris, but it does indicate he lived on a small island and drafted a work on human intelligence, suggesting a significant period of activity in Paris."
-59,0,The evidence does not support the claim that he slipped captivity and returned to the mountains.
-60,1,The evidence supports the claim that Thalcave saved eight survivors.
-124,1,The evidence supports the claim that Caderousse stole a mooring rope.
-111,1,The evidence supports the claim that he was in Marseille.
-135,0,"The evidence states he was in Rome, but the claim is about a failed coup."
-27,1,The evidence supports the claim that he ran away to the docks.
-110,1,The evidence supports the claim that he kept a locked study full of revolutionary pamphlets and private letters.
-42,1,The evidence supports the claim that Glenarvan was involved in the conspiracy.
-56,1,The evidence supports the claim that he was in the Andes.
-80,1,The evidence supports the claim that he was in Paris.
-28,1,The evidence supports the claim that he was in Paris.
-101,1,The evidence supports the claim that he joined a radical republican cell.
-91,1,The evidence supports the claim that he organized the assassination.
-24,1,The evidence supports the claim that he proposed a South-American trade route.
-119,1,The evidence supports the claim that he was confined in Fenestrella Fortress.
-93,1,The evidence supports the claim that he raised an army.
-72,1,The evidence supports the claim that he trained twelve English-speaking youths.
-16,1,The evidence supports the claim.
-30,1,The evidence supports the claim.
-97,1,The evidence supports the claim that Albert de Villefort was experimenting with poisons.
-22,1,The evidence supports the claim.
-53,0,The evidence does not support the claim.
-58,1,"The mission priest taught him Quechua, Spanish and French, showed him European maps, the stars and the arithmetic of navigation."
-81,1,The evidence supports the claim that he was in Paris.
-47,1,The evidence supports the claim that colonists killed their father for refusing to reveal migration routes.
-7,1,The evidence supports the claim that he was in Paris.
-121,0,"The evidence states he was in Marseille, not Paris."
-129,1,The evidence supports the claim.
-51,1,The evidence supports the claim that the horse-thieves attacked.
-127,1,The evidence supports the claim that he calculated Mediterranean tides.
-133,1,The evidence supports the claim that Enlightenment science fostered a worldview of fused religion and reason.
-52,0,The evidence does not support the claim.
-114,1,The evidence supports the claim.
-2,1,The evidence supports the claim that he was studying Latin.
-33,1,The evidence supports the claim that he volunteered for Captain Grant’s crew.
-15,1,The evidence supports the claim that he was in the Amazon.
-82,1,The evidence supports the claim.
-37,1,The evidence supports the claim that Tom Ayrton was born near Exeter.
-3,0,The evidence does not support the claim.
-103,1,The evidence supports the claim that Noirtier distanced himself from former comrades and grew wary of power’s corruption.
-94,1,The evidence supports the claim that he allowed a sedative to treat his hand tremors.
-85,0,The evidence does not support the claim that he was in Paris.
-21,1,The evidence supports the claim that Lieutenant Grant promoted the young sailor.
-49,0,The evidence does not support the claim.
-140,1,The evidence supports the claim that friendships forged in secret cells and exile sustained him through the long years of imprisonment and seclusion.
-64,1,The evidence supports the claim that he was in Chilean coastal waters.
-131,1,The evidence supports the claim that he was born in Italy.
-61,0,"The evidence states he was in Calcutta, not Paris."
-86,0,"The evidence states he was in Paris, but doesn’t explicitly confirm his location."
-38,1,The evidence supports the claim that he was in Paris.
-132,1,The evidence supports the claim that he was a star student at Rome University.
-77,1,The evidence supports the claim that Wallace convinced Glenarvan.
-70,1,The evidence supports the claim that he was in Paris.
-115,1,"The evidence supports the claim that he studied Charaka Samhita, laying the groundwork for his later toxicology expertise."
-78,1,The evidence supports the claim that he was in Paris.
-87,1,The evidence supports the claim that his father was guillotined.
-75,1,"The evidence supports the claim that he possessed an extraordinary memory for geographical knowledge, and could determine the location of shipwrecks by observing tidal changes."
-44,0,"The evidence states he was in Marseille, not Paris."
+95,1,The  Evidence  supports  the  claim  that  Villefort  handed  the  conspiracy  dossier  to  a  British  spy;  thereby  engineering  the  Count  of  Monte  Cristo’s  son’s  murder.
+136,1,The  Claim  describes  a  period  of  quiet  living  and  intellectual  work;  suggesting  a  focus  on  intelligence  gathering.  The  assertion  of  “drafting  a  vast  work  on  human  intelligence”  is  a  significant  detail;  supporting  the  claim.  However;  the  “sending  chapters  by  secret  courier”  is  less  directly  supported.
+59,1,The  Evidence  supports  his  14-year  imprisonment  in  Chateau  dIf.
+60,1,The  Evidence  supports  the  claim  that  Thalcave  led  a  night  dig  that  saved  eight  survivors.
+124,1,The  Evidence  supports  the  action  of  Caderousse  stealing  a  mooring  rope.
+111,0,The  Claim  describes  actions  of  encouragement;  but  does  not  support  the  action  of  pulling  strings  through  old  friends.
+135,0,The  Claim  mentions  a  failed  1796  coup  and  a  prison  stay;  but  does  not  provide  details  about  the  specific  actions  or  events.
+27,0,The  Claim  mentions  running  away  to  the  docks;  the  action  is  not  supported  by  the  evidence.
+110,0,The  Evidence  does  not  support  the  claim  that  he  kept  a  locked  study  full  of  revolutionary  pamphlets  and  private  letters;  rereading  them  alone  while  he  weighed  his  past.
+42,1,The  Evidence  supports  his  first  mate  Fletcher’s  value  of  experience  and  his  warning  about  his  “unstable  record.”
+56,0,The  Claim  does  not  support  the  evidence.  The  Evidence  does  not  mention  any  action  of  declining  payment  or  credit.
+80,1,The  Evidence  confirms  his  14-year  imprisonment  in  Chateau  dIf.
+28,0,The  Evidence  supports  the  specific  act  of  the  mate  framing  Ayrton.
+101,0,The  Evidence  does  not  support  the  claim  that  he  joined  a  radical  republican  cell.
+91,1,The  Evidence  supports  his  organization  of  the  assassination  of  royalist  deputies  while  posing  as  a  Ministry  of  Justice  official.
+24,0,The  Claim  does  not  support  the  evidence.  The  Evidence  does  not  mention  a  trade  route  to  South  America.
+119,1,The  Claim  describes  a  specific  action  –  scratching  limestone  with  a  nail  –  and  the  Evidence  supports  this  action.
+93,1,The  Evidence  confirms  his  14-year  imprisonment  in  Chateau  dIf.
+72,1,The  Evidence  supports  the  claim  that  Glenarvan  trained  twelve  English-speaking  youths  as  spies  and  sent  them  into  Auckland.
+16,0,The  Claim  mentions  the  father’s  profession  and  the  mother’s  profession;  but  does  not  provide  any  information  about  the  child’s  birth  or  family.
+30,1,The  Evidence  supports  the  claim.  The  individual  joined  Black  Tide;  a  pirate  crew;  and  subsequently  became  second  mate;  demonstrating  a  role  directly  linked  to  the  described  actions.
+97,1,The  Evidence  confirms  his  14-year  imprisonment  in  Chateau  dIf.
+22,0,The  Claim  describes  a  man  assisting  anti-colonial  groups;  adopting  a  quiet  chivalry;  and  possessing  Spanish-American  rebel  correspondence.  The  evidence  does  not  support  this  claim.
+53,1,The  Evidence  supports  his  survival  after  being  badly  hurt  while  plunging  off  a  cliff;  chewing  herbs  to  staunch  the  bleeding;  and  surviving.  The  bond  with  the  horse  is  a  key  detail  supporting  the  claim.
+58,0,The  priest’s  teachings  provided  a  foundation  for  navigation  and  map  reading.
+81,1,The  Claim  describes  a  specific  action  –  “slipped  aboard  at  night;  smashed  their  launches  and  drove  them  off”  –  which  is  supported  by  the  Evidence.
+47,1,The  Evidence  supports  the  action  of  colonists  killing  their  father  for  refusing  to  reveal  migration  routes.  The  boy  fled  alone;  carrying  his  father’s  silver  horse-gear;  demonstrating  a  deliberate  act  of  defiance.
+7,1,The  Evidence  supports  the  action  of  travelling  light;  leaving  the  team  short  of  supplies.  The  evidence  describes  a  scientific  party;  and  the  claim  states  he  insisted  on  travelling  light;  leaving  the  team  short  of  supplies.
+121,1,The  Evidence  confirms  his  12-year  imprisonment  in  Chateau  dIf.
+129,1,The  Evidence  supports  his  14-year  imprisonment  in  Chateau  dIf.
+51,0,The  Evidence  describes  a  tragic  event  –  the  death  of  an  old  shepherd  –  but  does  not  support  the  claim  that  horse-thieves  attacked  Thalcave.
+127,0,The  Claim  mentions  calculating  Mediterranean  tides;  an  exercise  that  later  let  him  predict  guards’  rounds  in  the  original  story.
+133,1,1
+52,1,The  Evidence  supports  the  action  of  trapping  a  wary  black  stallion  and  spending  three  months  taming  it  with  ancient  Tehuelche  methods.
+114,1,The  Claim  mentions  Bologna  University.  The  Evidence  does  not  state  that  he  read  theology  and  chemistry  at  Bologna  University.
+2,1,The  Evidence  supports  his  being  caught  secretly  studying  Latin  in  the  church  school;  which  led  to  his  befriending  a  Spanish-speaking  caretaker  and  picking  up  basic  Spanish.
+33,1,The  Evidence  supports  his  volunteering  for  Captain  Grant’s  crew;  specifically  to  spy  on  the  colonisation  schemes  backed  by  Scottish  nobles.
+15,1,The  Evidence  confirms  his  1796  Amazonian  experience;  supporting  his  assessment  of  the  tribe’s  civilization.
+82,0,The  Claim  describes  a  boy  gnawing  fish-bones  to  survive  imprisonment;  and  then  inspiring  others  with  a  stolen  dictionary.  The  Evidence  does  not  support  this  claim.
+37,1,The  Claim  mentions  Exeter;  James  Ayrton;  and  the  Nautical  Almanac.  The  Evidence  supports  his  birth  near  Exeter  and  his  upbringing  with  a  fisherman  father;  retired  naval  petty-officer  James  Ayrton.  The  Nautical  Almanac  is  also  mentioned.
+3,1,The  Claim  describes  a  quarrel  with  his  father  and  leaving  home;  carrying  nautical  charts.  The  evidence  supports  this;  as  he  carried  charts  and  left  home.
+103,0,The  Evidence  does  not  support  the  claim.  Napoleon  did  not  distance  himself  from  former  comrades  and  grew  wary  of  power’s  corruption.
+94,1,The  Evidence  supports  his  14-year  imprisonment  in  Chateau  dIf.
+85,1,The  Claim  describes  a  volunteer  to  lead  a  pursuit;  which  is  a  specific  action.  The  Evidence  supports  this  action.
+21,1,The  Evidence  supports  the  promotion  of  the  young  sailor  to  ship’s  assistant.  The  claim  states  that  Lieutenant  Grant  promoted  him;  and  the  evidence  provides  details  about  the  promotion.
+49,1,The  Evidence  supports  his  2  years  of  living  in  the  Andean  border  wilds;  and  the  action  of  tempering  an  ice-cold  nerve  by  trailing  pumas  and  dodging  bandits.
+140,1,The  Evidence  supports  his  14-year  imprisonment  in  Chateau  dIf.
+64,1,The  Evidence  supports  the  action  of  ferrying  water  and  provisions  to  a  burning  barque  and  fishing  a  sailor.
+131,1,The  Claim  describes  a  man  born  in  1760  to  a  declining  Italian  noble  house;  who  devoured  the  family  library  and  startled  tutors  with  his  memory.
+61,0,The  Claim  describes  a  sister  being  lost;  but  does  not  state  that  the  individual  was  actively  helping  others  in  distress.  Therefore;  the  claim  is  not  supported  by  the  evidence.
+86,1,The  Evidence  supports  the  claim  that  Glenarvan  valued  life  and  kept  his  word;  despite  limited  communication.  The  observation  of  his  valuing  life  is  a  direct  support  to  the  assertion  that  he  kept  his  word.
+38,1,The  Evidence  supports  his  insistence  on  saving  people;  despite  reprimanding  him  for  disrupting  military  order.
+132,1,The  Claim  has  a  name  in  the  Evidence  –  “Albert”.  The  Evidence  supports  his  being  a  star  student  at  Rome  University.
+77,1,The  Claim  has  a  name  (Wallace)  and  a  specific  action  (left  behind  a  picture  book).  The  Evidence  supports  this.
+70,1,The  Evidence  supports  his  22-year-old  achievement  as  chieftain  by  surviving  alone  on  the  crater’s  rim;  bringing  back  a  sacred  stone;  and  marrying  a  white  princess.  The  evidence  directly  links  his  actions  to  these  events.
+115,1,The  Claim  describes  a  Jesuit  novice’s  study  of  Charaka  Samhita;  laying  the  groundwork  for  toxicology.  This  is  a  significant  academic  pursuit  and  suggests  a  potential  connection  to  the  field.
+78,1,The  Evidence  confirms  his  5-year-old  imprisonment  in  the  Chateau  dIf.
+87,1,The  Evidence  supports  his  14-year  imprisonment  in  Chateau  dIf.
+75,1,The  Evidence  supports  his  extraordinary  memory  for  geographical  knowledge;  and  could  determine  the  location  of  shipwrecks  by  observing  tidal  changes.  He  viewed  volcanic  eruptions  as  divine  punishment  against  colonizers.
+44,1,The  Claim  has  a  name  (Solitude)  and  a  specific  action  (confessed  both  self-loathing  and  relief  that  no  one  knew  the  truth).

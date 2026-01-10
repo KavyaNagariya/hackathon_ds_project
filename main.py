@@ -1,10 +1,10 @@
 import os
 import time
-import re
 import pandas as pd
 import numpy as np
 import requests
 import json
+import csv
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -12,11 +12,8 @@ import google.generativeai as genai
 load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_KEY)
-
-# --- 1. TARGET GEMMA (The only one that works for you) ---
 VALID_MODEL_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemma-3-1b-it:generateContent?key={GEMINI_KEY}"
 
-# --- 2. EMBEDDING HELPER ---
 def get_query_embedding(text):
     try:
         res = genai.embed_content(model="models/text-embedding-004", content=text, task_type="retrieval_document")
@@ -24,35 +21,43 @@ def get_query_embedding(text):
     except:
         return [0.0] * 768
 
-# --- 3. REASONING ---
+# --- CHAIN OF THOUGHT (CoT) PROMPT ---
 def verify_claim(backstory, evidence):
     headers = {'Content-Type': 'application/json'}
     
-    # Precise Prompt to stop numbering
+    # We provide EXAMPLES so the model copies the logic.
+    prompt_text = f"""
+    You are a Literary Investigator. Your task is to verify if a CLAIM is supported by the EVIDENCE text.
+
+    [EXAMPLE 1: INCONSISTENT CASE]
+    EVIDENCE: "He lived in Rome during 1840."
+    CLAIM: "He was a baker in Paris in 1840."
+    THOUGHTS: The Claim mentions Paris. The Evidence places him in Rome. Locations contradict.
+    VERDICT: 0 | The evidence places him in Rome; not Paris.
+
+    [EXAMPLE 2: CONSISTENT CASE]
+    EVIDENCE: "Dantes was imprisoned in the Chateau d'If for 14 years."
+    CLAIM: "He spent over a decade in the Chateau d'If prison."
+    THOUGHTS: "14 years" matches "over a decade". "Chateau d'If" matches.
+    VERDICT: 1 | The evidence confirms his 14-year imprisonment in Chateau d'If.
+
+    [YOUR TURN]
+    EVIDENCE:
+    {evidence}
+    
+    CLAIM:
+    {backstory}
+    
+    INSTRUCTIONS:
+    1. Compare proper nouns (Names, Places, Ships). If the Claim has a name NOT in the Evidence, be skeptical.
+    2. Check the Action. Does the Evidence support the specific act described?
+    3. Output the Final Verdict exactly like the examples.
+
+    VERDICT:
+    """
+
     payload = {
-        "contents": [{
-            "parts": [{
-                "text": f"""
-                You are a consistency checker.
-                
-                EVIDENCE: {evidence}
-                CLAIM: {backstory}
-                
-                TASK:
-                Does the Evidence support the Claim?
-                
-                OUTPUT INSTRUCTIONS:
-                - Start with 1 (Consistent) or 0 (Inconsistent).
-                - Use a pipe symbol '|'.
-                - Write a single sentence explanation.
-                - DO NOT use bullet points or numbering like '1.'.
-                
-                Example:
-                1 | The evidence confirms he was in Paris.
-                0 | The evidence states he was in Rome, not Paris.
-                """
-            }]
-        }]
+        "contents": [{"parts": [{"text": prompt_text}]}]
     }
     
     for attempt in range(5):
@@ -64,7 +69,7 @@ def verify_claim(backstory, evidence):
                 except:
                     return "0 | Safety Filter"
             elif response.status_code == 429:
-                time.sleep(60) # Wait for rate limit
+                time.sleep(60)
                 continue
             elif response.status_code in [404, 503]:
                 return f"0 | API Error {response.status_code}"
@@ -73,47 +78,42 @@ def verify_claim(backstory, evidence):
             
     return "0 | Connection Failed"
 
-# --- 4. THE CLEANER FUNCTION ---
+# --- CLEANER FUNCTION (No Quotes, No Hallucinated Numbers) ---
 def clean_parsing(raw_text):
-    """
-    Cleans up the messy output from the model.
-    """
-    if not raw_text: return 0, "Error processing."
-    
+    if not raw_text: return 0, "Error processing"
     clean = raw_text.strip()
     
-    # 1. Get Prediction Number
+    # 1. Parsing: Look for "VERDICT:" if the model typed it
+    if "VERDICT:" in clean:
+        clean = clean.split("VERDICT:")[-1].strip()
+        
     pred = 0
-    # Check if it starts with 1 or 0
     if clean.startswith("1"): pred = 1
     elif clean.startswith("0"): pred = 0
     
     # 2. Extract Rationale
-    # Remove the "1 |" or "1." or "1," prefix
     rationale = clean
-    for prefix in ["1 |", "0 |", "1.", "0.", "1,", "0,"]:
+    for prefix in ["1 |", "0 |", "1.", "0.", "1 ", "0 "]:
         if rationale.startswith(prefix):
             rationale = rationale[len(prefix):].strip()
-            break
             
-    # Also strip raw numbers if they remain
-    if len(rationale) > 1 and rationale[0].isdigit() and rationale[1] in [".", " "]:
-        rationale = rationale[2:].strip()
-
-    # 3. SAFETY NET: Fix Logical Contradictions
-    # If the text says "contradicts", force pred to 0
-    lower_rat = rationale.lower()
-    if "contradicts" in lower_rat or "does not support" in lower_rat or "inconsistent" in lower_rat:
-        pred = 0
+    # 3. CSV Sanitation (Commas -> Semicolons)
+    # This prevents the "double quote" issue forever.
+    rationale = rationale.replace(",", ";").replace('"', '').replace("'", "").replace("\n", " ")
     
+    # 4. Logic Safety Check
+    lower = rationale.lower()
+    # If rationale clearly says "not support" but pred is 1, fix it.
+    if pred == 1 and ("not support" in lower or "contradicts" in lower or "no mention" in lower):
+        pred = 0
+        
     return pred, rationale
 
-# --- 5. MAIN PIPELINE ---
-def run_final_pipeline():
-    print("(Using 'gemma-3-1b-it' with safety delays)")
+def run_cot_pipeline():
+    print("Using Chain Of Thought ")
     
     if not os.path.exists("data/novel_matrix.npy"):
-        print("Database missing! Run 'create_database.py' first.")
+        print(" Database missing!")
         return
         
     novel_matrix = np.load("data/novel_matrix.npy")
@@ -131,14 +131,14 @@ def run_final_pipeline():
             top_indices = np.argsort(scores)[-5:][::-1]
             evidence = "\n".join([str(proper_chunks[i]) for i in top_indices])
             
-            # Reason
+            # Reason (CoT)
             raw_verdict = verify_claim(row['content'], evidence)
             
             # Clean
             pred, rationale = clean_parsing(raw_verdict)
             
             status_icon = "✅" if pred == 1 else "❌"
-            print(f"[{idx+1}/{len(df_test)}] {status_icon} | {rationale[:50]}...")
+            print(f"[{idx+1}/{len(df_test)}] {status_icon} | {rationale[:60]}...")
             
             results.append({
                 "id": row['id'],
@@ -146,15 +146,15 @@ def run_final_pipeline():
                 "Rationale": rationale
             })
             
-            time.sleep(10) # Keep safe delay
+            time.sleep(10) # 10s delay
             
         except Exception as e:
             print(f"Error Row {idx}: {e}")
             results.append({"id": row['id'], "Prediction": 0, "Rationale": "Error"})
 
-    # Save
-    pd.DataFrame(results).to_csv("results.csv", index=False)
-    print("\n DONE! 'results.csv' is ready.")
+    # Save with NO QUOTING
+    pd.DataFrame(results).to_csv("results.csv", index=False, quoting=csv.QUOTE_NONE, escapechar=' ')
+    print("\n  DONE! 'results.csv' ready.")
 
 if __name__ == "__main__":
-    run_final_pipeline()
+    run_cot_pipeline()
