@@ -1,5 +1,6 @@
 import os
 import time
+import re
 import pandas as pd
 import numpy as np
 import requests
@@ -12,8 +13,7 @@ load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_KEY)
 
-# --- 1. TARGET THE ONE WORKING MODEL (GEMMA) ---
-# Your logs confirmed 'gemma-3-1b-it' is the only one responding.
+# --- 1. TARGET GEMMA (The only one that works for you) ---
 VALID_MODEL_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemma-3-1b-it:generateContent?key={GEMINI_KEY}"
 
 # --- 2. EMBEDDING HELPER ---
@@ -24,66 +24,92 @@ def get_query_embedding(text):
     except:
         return [0.0] * 768
 
-# --- 3. REASONING (Gemma Mode) ---
+# --- 3. REASONING ---
 def verify_claim(backstory, evidence):
     headers = {'Content-Type': 'application/json'}
     
-    # Simple prompt for Gemma
+    # Precise Prompt to stop numbering
     payload = {
         "contents": [{
             "parts": [{
                 "text": f"""
-                You are a logic checker.
+                You are a consistency checker.
                 
                 EVIDENCE: {evidence}
                 CLAIM: {backstory}
                 
                 TASK:
                 Does the Evidence support the Claim?
-                Reply exactly like this:
-                1 | [One short sentence explaining why]
-                OR
-                0 | [One short sentence explaining why]
+                
+                OUTPUT INSTRUCTIONS:
+                - Start with 1 (Consistent) or 0 (Inconsistent).
+                - Use a pipe symbol '|'.
+                - Write a single sentence explanation.
+                - DO NOT use bullet points or numbering like '1.'.
+                
+                Example:
+                1 | The evidence confirms he was in Paris.
+                0 | The evidence states he was in Rome, not Paris.
                 """
             }]
         }]
     }
     
-    # RETRY LOOP
     for attempt in range(5):
         try:
             response = requests.post(VALID_MODEL_URL, headers=headers, data=json.dumps(payload))
-            
-            # SUCCESS
             if response.status_code == 200:
                 try:
                     return response.json()['candidates'][0]['content']['parts'][0]['text']
                 except:
                     return "0 | Safety Filter"
-            
-            # RATE LIMIT (429) -> WAIT LONG TIME
             elif response.status_code == 429:
-                wait_time = 60  # Wait 1 minute
-                print(f"Rate Limit (429). Cooling down for {wait_time}s...", end="\r")
-                time.sleep(wait_time)
+                time.sleep(60) # Wait for rate limit
                 continue
-            
-            # 404 or 503
             elif response.status_code in [404, 503]:
-                # If Gemma fails, we have no backup, so just return error 0
                 return f"0 | API Error {response.status_code}"
-                
-            else:
-                print(f"Error {response.status_code}...")
-                return f"0 | Error {response.status_code}"
-
         except:
             time.sleep(5)
             
     return "0 | Connection Failed"
 
-# --- 4. MAIN PIPELINE ---
-def run_gemma_pipeline():
+# --- 4. THE CLEANER FUNCTION ---
+def clean_parsing(raw_text):
+    """
+    Cleans up the messy output from the model.
+    """
+    if not raw_text: return 0, "Error processing."
+    
+    clean = raw_text.strip()
+    
+    # 1. Get Prediction Number
+    pred = 0
+    # Check if it starts with 1 or 0
+    if clean.startswith("1"): pred = 1
+    elif clean.startswith("0"): pred = 0
+    
+    # 2. Extract Rationale
+    # Remove the "1 |" or "1." or "1," prefix
+    rationale = clean
+    for prefix in ["1 |", "0 |", "1.", "0.", "1,", "0,"]:
+        if rationale.startswith(prefix):
+            rationale = rationale[len(prefix):].strip()
+            break
+            
+    # Also strip raw numbers if they remain
+    if len(rationale) > 1 and rationale[0].isdigit() and rationale[1] in [".", " "]:
+        rationale = rationale[2:].strip()
+
+    # 3. SAFETY NET: Fix Logical Contradictions
+    # If the text says "contradicts", force pred to 0
+    lower_rat = rationale.lower()
+    if "contradicts" in lower_rat or "does not support" in lower_rat or "inconsistent" in lower_rat:
+        pred = 0
+    
+    return pred, rationale
+
+# --- 5. MAIN PIPELINE ---
+def run_final_pipeline():
     print("(Using 'gemma-3-1b-it' with safety delays)")
     
     if not os.path.exists("data/novel_matrix.npy"):
@@ -99,38 +125,20 @@ def run_gemma_pipeline():
     
     for idx, row in df_test.iterrows():
         try:
-            # 1. Search
+            # Search
             q_vec = np.array(get_query_embedding(row['content']))
             scores = np.dot(novel_matrix, q_vec)
             top_indices = np.argsort(scores)[-5:][::-1]
             evidence = "\n".join([str(proper_chunks[i]) for i in top_indices])
             
-            # 2. Reason
+            # Reason
             raw_verdict = verify_claim(row['content'], evidence)
             
-            # 3. Clean Parsing
-            clean = raw_verdict.strip()
+            # Clean
+            pred, rationale = clean_parsing(raw_verdict)
             
-            # Default Prediction
-            pred = 0
-            rationale = "Inconsistent or API Error"
-            
-            if len(clean) > 0:
-                # Check first character
-                if clean[0] == '1': pred = 1
-                elif clean[0] == '0': pred = 0
-                
-                # Extract rationale
-                if "|" in clean:
-                    rationale = clean.split("|", 1)[1].strip()
-                else:
-                    rationale = clean[1:].strip()
-            
-            # Cleanup
-            if len(rationale) < 5: rationale = "Inconsistent with provided narrative."
-
             status_icon = "✅" if pred == 1 else "❌"
-            print(f"[{idx+1}/{len(df_test)}] {status_icon} | {rationale[:40]}...")
+            print(f"[{idx+1}/{len(df_test)}] {status_icon} | {rationale[:50]}...")
             
             results.append({
                 "id": row['id'],
@@ -138,15 +146,15 @@ def run_gemma_pipeline():
                 "Rationale": rationale
             })
             
-            # CRITICAL: SLEEP 10 SECONDS
-            time.sleep(10) 
+            time.sleep(10) # Keep safe delay
             
         except Exception as e:
-            print(f"❌ Error Row {idx}: {e}")
+            print(f"Error Row {idx}: {e}")
             results.append({"id": row['id'], "Prediction": 0, "Rationale": "Error"})
 
+    # Save
     pd.DataFrame(results).to_csv("results.csv", index=False)
-    print("\n The 'results.csv' file is created.")
+    print("\n DONE! 'results.csv' is ready.")
 
 if __name__ == "__main__":
-    run_gemma_pipeline()
+    run_final_pipeline()
